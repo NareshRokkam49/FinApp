@@ -11,11 +11,19 @@ import 'package:flutter_task/routes/app_routes.dart';
 import 'package:flutter_task/utils/display_utils.dart';
 import 'package:flutter_task/view_modals/rendom_viewmodal.dart';
 import 'package:get/get.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 
-class RendomImageScreen extends StatelessWidget {
+class RendomImageScreen extends StatefulWidget {
   RendomImageScreen({Key? key});
+
+  @override
+  State<RendomImageScreen> createState() => _RendomImageScreenState();
+}
+
+class _RendomImageScreenState extends State<RendomImageScreen> {
   final ValueNotifier _bluetoothValue = ValueNotifier(false);
+
   final MethodChannel _bluetoothChannel = MethodChannel('bluetooth_channel');
 
   @override
@@ -50,7 +58,7 @@ class RendomImageScreen extends StatelessWidget {
                         vGap(30),
                         rendomImage(randomViewModel),
                         vGap(20),
-                        bluetoothBtn()
+                        bluetoothBtn(randomViewModel),
                       ],
                     ),
                   ),
@@ -82,6 +90,7 @@ class RendomImageScreen extends StatelessWidget {
         ? CachedNetworkImage(
             imageUrl: randomViewModel.rendomDogRes!.message ?? "",
             imageBuilder: (context, imageProvider) {
+              // ignore: unnecessary_null_comparison
               if (imageProvider != null) {
                 return Image(image: imageProvider);
               } else {
@@ -116,44 +125,42 @@ class RendomImageScreen extends StatelessWidget {
         : Container();
   }
 
-  Widget bluetoothBtn() {
-    return ValueListenableBuilder(
-        valueListenable: _bluetoothValue,
-        builder: (context, value, child) {
-          return Column(
-            children: [
-              CButton(
-                  color: Colors.transparent,
-                  onPressed: () {
-                    enableBluetooth(context);
-                  },
-                  text: Text("Bluetooth")),
-            ],
-          );
-        });
+  Widget bluetoothBtn(RendomViewModal randomViewModel) {
+    return CButton(
+        color: Colors.transparent,
+        onPressed: () async {
+          await enableBluetooth();
+        },
+        text: Text("Bluetooth"));
+  }
+  Future<void> enableBluetooth() async {
+    try {
+      final bool result = await _bluetoothChannel.invokeMethod('enableBluetooth');
+      print('Bluetooth enabled: $result');
+    } on PlatformException catch (e) {
+      print('Failed to enable Bluetooth: ${e.message}');
+    }
   }
 
-  Future<void> enableBluetooth(BuildContext context) async {
-    try {
-      await _bluetoothChannel.invokeMethod('enableBluetooth');
-    } on PlatformException catch (e) {
-      if (e.code == 'bluetooth_off') {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: Text('Bluetooth is Off'),
-            content: Text('Please enable Bluetooth manually and try again.'),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                child: Text('OK'),
-              ),
-            ],
-          ),
-        );
-      }
+  
+  @override
+  void initState() {
+    requestBluetoothPermissions(context);
+    print("object");
+    super.initState();
+  }
+
+  void requestBluetoothPermissions(BuildContext context) async {
+    PermissionStatus status = await Permission.bluetooth.request();
+    if (status.isGranted) {
+      // Permissions are granted, you can proceed with Bluetooth functionality.
+      print('Bluetooth permissions granted');
+    } else if (status.isDenied) {
+      // Permissions are denied.
+      print('Bluetooth permissions denied');
+    } else if (status.isPermanentlyDenied) {
+      // Permissions are permanently denied, user has to go to settings to enable them.
+      openAppSettings();
     }
   }
 }

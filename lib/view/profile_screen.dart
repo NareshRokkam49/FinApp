@@ -1,18 +1,25 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_task/constants/c_colors.dart';
 import 'package:flutter_task/constants/c_strings.dart';
 import 'package:flutter_task/resources/text_styles.dart';
 import 'package:flutter_task/utils/display_utils.dart';
-import 'package:flutter_task/view_modals/profile_viewmodal.dart';
-import 'package:provider/provider.dart';
 
-class ProfileScreen extends StatelessWidget {
+import '../modals/res/profile_res.dart';
+import '../modals/services/api_endpoint.dart';
+
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
   @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  ProfileRes ?_profileRes;
+  @override
   Widget build(BuildContext context) {
-    final profileViewModel = Provider.of<ProfileViewModal>(context);
 
     return Scaffold(
         appBar: AppBar(
@@ -22,10 +29,10 @@ class ProfileScreen extends StatelessWidget {
         ),
         body: RefreshIndicator(
           onRefresh: () {
-            return profileViewModel.dataFromProfileApi();
+            return dataFromProfileApi();
           },
           child: Center(
-              child: profileViewModel.profileList == null
+              child: _profileRes == null
                   ? CircularProgressIndicator()
                   : Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -34,7 +41,7 @@ class ProfileScreen extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             dragDataText(),
-                            _profileData(profileViewModel),
+                            _profileData(_profileRes),
                             vGap(20),
                           ]),
                     )),
@@ -50,18 +57,18 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _profileData(ProfileViewModal profileViewModel) {
+  Widget _profileData(ProfileRes? profileRes) {
     return Expanded(
-      child: profileViewModel.profileList?.results?.length == 0
+      child: profileRes?.results?.length == 0
           ? Center(
               child: Text(
               "No data found",
               style: TextStyles.getSubTital20(),
             ))
           : ListView.builder(
-              itemCount: profileViewModel.profileList?.results?.length ?? 0,
+              itemCount: profileRes?.results?.length ?? 0,
               itemBuilder: (context, index) {
-                final resData = profileViewModel.profileList!.results![index];
+                final resData = profileRes!.results![index];
                 final dob = DateTime.parse(resData.dob!.date!);
                 final registeredDate =
                     DateTime.parse(resData.registered!.date!);
@@ -82,6 +89,7 @@ class ProfileScreen extends StatelessWidget {
                           child: CachedNetworkImage(
                             imageUrl: resData.picture?.large ?? "",
                             imageBuilder: (context, imageProvider) {
+                              // ignore: unnecessary_null_comparison
                               if (imageProvider != null) {
                                 return Image(image: imageProvider);
                               } else {
@@ -121,5 +129,27 @@ class ProfileScreen extends StatelessWidget {
               },
             ),
     );
+  }
+@override
+void initState() {
+  dataFromProfileApi();
+  super.initState();
+  
+}
+  //profile api
+  dataFromProfileApi() async {
+    try {
+      Response profileResponce = await Dio().get(
+        ApiEndPoint.profileApi,
+      );
+      final profileResult = ProfileRes.fromJson(profileResponce.data);
+      setState(() {
+              _profileRes = profileResult;
+
+      });
+    
+    } on DioException catch (e) {
+      print(e);
+    }
   }
 }

@@ -4,23 +4,25 @@ import 'package:get/get.dart';
 
 import '../../../constants/c_colors.dart';
 import '../../../utils/display_utils.dart';
+import '../resources/text_styles.dart';
 
 willpopAlert(BuildContext context) {
   showDialog(
     context: context,
-    barrierDismissible: false, // user must tap button!
+    barrierDismissible: false,
     builder: (BuildContext context) {
       return AlertDialog(
         insetPadding: EdgeInsets.all(50),
         buttonPadding: EdgeInsets.all(50),
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.all(Radius.circular(20.0))),
-        title: const Text('Are you sure you want to exit?'),
+        title: Text('Are you sure you want to exit?',style: TextStyles.getSubTita14(),),
         actions: [
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               OutlinedButton(
+                
                 style: OutlinedButton.styleFrom(
                   visualDensity: VisualDensity(),
                   shape: StadiumBorder(),

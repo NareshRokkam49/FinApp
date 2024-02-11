@@ -15,7 +15,7 @@ class RendomViewModal with ChangeNotifier {
     await dataFromTheRendomDogImageApi();
   }
 
-  dataFromTheRendomDogImageApi() async {
+  Future<void> dataFromTheRendomDogImageApi() async {
     try {
       Response rendomResponce = await Dio().get(
         ApiEndPoint.rendomApi,
@@ -29,11 +29,17 @@ class RendomViewModal with ChangeNotifier {
   }
 
   Future<void> checkPermissions() async {
+    print("checkPermissions");
     PermissionStatus bluetoothStatus = await Permission.bluetooth.status;
-    if (bluetoothStatus.isDenied) {
-      // Permissions are already granted, proceed with log-related functionality.
+    PermissionStatus locationStatus = await Permission.location.status;
+
+    if (bluetoothStatus.isDenied ||locationStatus.isDenied) {
+      print(await Permission.bluetooth.status);
+      print(await Permission.location.status);
       requestPermissions();
     } else {
+      print("else${bluetoothStatus}");
+
       // Permissions are not granted, you can request them.
       requestPermissions();
     }
@@ -42,13 +48,21 @@ class RendomViewModal with ChangeNotifier {
   Future<void> requestPermissions() async {
     Map<Permission, PermissionStatus> permissionStatus = await [
       Permission.bluetooth,
+      Permission.location,
     ].request();
-    if (permissionStatus[Permission.bluetooth]!.isGranted) {
-    } else if (permissionStatus[Permission.bluetooth]!.isDenied) {
+    if (permissionStatus[Permission.bluetooth]!.isGranted  ||
+        permissionStatus[Permission.location]!.isGranted) {
+    } else if (permissionStatus[Permission.bluetooth]!.isDenied  ||
+        permissionStatus[Permission.location]!.isDenied) {
+      print("bluetoot   hStatus${permissionStatus}");
+
       // Permissions are denied or permanently denied.
       // You can show an error message or guide the user to enable permissions in settings.
       openAppSettings();
-    } else if (permissionStatus[Permission.bluetooth]!.isPermanentlyDenied) {
+    } else if (permissionStatus[Permission.bluetooth]!.isPermanentlyDenied  ||
+        permissionStatus[Permission.location]!.isPermanentlyDenied) {
+      print("   hStatus${permissionStatus}");
+
       openAppSettings();
     }
   }

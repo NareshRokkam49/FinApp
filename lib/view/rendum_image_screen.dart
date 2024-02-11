@@ -11,20 +11,13 @@ import 'package:flutter_task/routes/app_routes.dart';
 import 'package:flutter_task/utils/display_utils.dart';
 import 'package:flutter_task/view_modals/rendom_viewmodal.dart';
 import 'package:get/get.dart';
-import 'package:permission_handler/permission_handler.dart';
+
 import 'package:provider/provider.dart';
 
-class RendomImageScreen extends StatefulWidget {
+class RendomImageScreen extends StatelessWidget {
   RendomImageScreen({Key? key});
 
-  @override
-  State<RendomImageScreen> createState() => _RendomImageScreenState();
-}
-
-class _RendomImageScreenState extends State<RendomImageScreen> {
-  final ValueNotifier _bluetoothValue = ValueNotifier(false);
-
-  final MethodChannel _bluetoothChannel = MethodChannel('bluetooth_channel');
+  static const MethodChannel _channel = MethodChannel('bluetooth_channel');
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +32,7 @@ class _RendomImageScreenState extends State<RendomImageScreen> {
         ),
         centerTitle: true,
         actions: [
-          _profile(),
+          _profileWidget(),
           hGap(5),
         ],
       ),
@@ -68,7 +61,7 @@ class _RendomImageScreenState extends State<RendomImageScreen> {
     );
   }
 
-  Widget _profile() {
+  Widget _profileWidget() {
     return Tooltip(
       message: CStrings.profile,
       child: CButton(
@@ -89,16 +82,28 @@ class _RendomImageScreenState extends State<RendomImageScreen> {
     return randomViewModel.rendomDogRes!.message!.isNotEmpty
         ? CachedNetworkImage(
             imageUrl: randomViewModel.rendomDogRes!.message ?? "",
+            errorWidget: (context, url, error) {
+              return Column(
+                children: [
+                  Icon(Icons.error, color: cRedColor, size: 50),
+                  vGap(10),
+                  Text(
+                    "Image error occurred",
+                    style: TextStyles.getSubTital18(textColor: cRedColor),
+                  )
+                ],
+              );
+            },
             imageBuilder: (context, imageProvider) {
               // ignore: unnecessary_null_comparison
               if (imageProvider != null) {
                 return Image(image: imageProvider);
               } else {
-                return CircularProgressIndicator();
+                return CircularProgressIndicator(color: cGreenColor);
               }
             },
           )
-        : CircularProgressIndicator(color: cSkyBuleColor);
+        : CircularProgressIndicator(color: cGreenColor);
   }
 
   Widget refreshBtn(RendomViewModal randomViewModel) {
@@ -129,38 +134,17 @@ class _RendomImageScreenState extends State<RendomImageScreen> {
     return CButton(
         color: Colors.transparent,
         onPressed: () async {
-          await enableBluetooth();
+          randomViewModel.checkPermissions();
+          enableBluetooth();
         },
         text: Text("Bluetooth"));
   }
-  Future<void> enableBluetooth() async {
+
+  static Future<void> enableBluetooth() async {
     try {
-      final bool result = await _bluetoothChannel.invokeMethod('enableBluetooth');
-      print('Bluetooth enabled: $result');
+      await _channel.invokeMethod('enableBluetooth');
     } on PlatformException catch (e) {
       print('Failed to enable Bluetooth: ${e.message}');
-    }
-  }
-
-  
-  @override
-  void initState() {
-    requestBluetoothPermissions(context);
-    print("object");
-    super.initState();
-  }
-
-  void requestBluetoothPermissions(BuildContext context) async {
-    PermissionStatus status = await Permission.bluetooth.request();
-    if (status.isGranted) {
-      // Permissions are granted, you can proceed with Bluetooth functionality.
-      print('Bluetooth permissions granted');
-    } else if (status.isDenied) {
-      // Permissions are denied.
-      print('Bluetooth permissions denied');
-    } else if (status.isPermanentlyDenied) {
-      // Permissions are permanently denied, user has to go to settings to enable them.
-      openAppSettings();
     }
   }
 }

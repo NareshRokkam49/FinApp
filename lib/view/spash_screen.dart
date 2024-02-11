@@ -36,11 +36,11 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   void initState() {
-    getValidation();
+    getTimer();
     super.initState();
   }
 
-  getValidation() async {
+  getTimer() async {
     Timer(Duration(seconds: 3), () {
       Get.offAllNamed(AppRoutes.rendomImageScreen);
     });

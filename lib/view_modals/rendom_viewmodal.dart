@@ -2,11 +2,26 @@ import 'package:flutter/material.dart';
 
 import 'package:dio/dio.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../modals/res/rendom_dog_res.dart';
 import '../modals/services/api_endpoint.dart';
 
 class RendomViewModal with ChangeNotifier {
   RendomDogRes? rendomDogRes;
+
+  Locale? _appLocale;
+  Locale? get appLocale => _appLocale;
+
+  void changeLanguage(Locale type) async {
+    SharedPreferences sp = await SharedPreferences.getInstance();
+   _appLocale=type;
+    if (type == Locale("en")) {
+      await sp.setString("language_code", "el");
+    } else {
+      await sp.setString("language_code", "es");
+    }
+    notifyListeners();
+  }
   RendomViewModal() {
     initializeData();
   }
